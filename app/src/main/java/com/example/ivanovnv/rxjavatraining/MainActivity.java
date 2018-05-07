@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             }
-        });
+        }).share();
 
         mButtonObserve.setOnClickListener(new View.OnClickListener() {
             @Override
