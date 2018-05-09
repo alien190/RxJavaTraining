@@ -9,6 +9,11 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.jakewharton.rxbinding2.view.RxView;
+
+import org.reactivestreams.Subscription;
+
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     Button mButton;
     Button mButtonObserve;
     Observable<String> mObservable;
+    Observable mClickObservable;
     TextView mTextView;
 
     @SuppressLint("CheckResult")
@@ -41,28 +47,33 @@ public class MainActivity extends AppCompatActivity {
         mButtonObserve = findViewById(R.id.bt_observe);
         mTextView = findViewById(R.id.tv_result);
 
-        mObservable = Observable.create(new ObservableOnSubscribe<String>() {
-            @Override
-            public void subscribe(final ObservableEmitter emitter) throws Exception {
-                mButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        emitter.onNext("click at: " + Calendar.getInstance().getTime().toString());
-                    }
-                });
-            }
-        }).share();
+        mClickObservable = RxView.clicks(mButton).share();
+
+//        mObservable = Observable.create(new ObservableOnSubscribe<String>() {
+//            @Override
+//            public void subscribe(final ObservableEmitter emitter) throws Exception {
+//                mButton.setOnClickListener(new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(View v) {
+//                        emitter.onNext("click at: " + Calendar.getInstance().getTime().toString());
+//                    }
+//                });
+//            }
+//        }).share();
+
+
 
         mButtonObserve.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mObservable.observeOn(Schedulers.newThread())
-                        .flatMap(new Function<String, ObservableSource<String>>() {
+                mClickObservable
+                        .observeOn(Schedulers.newThread())
+                        .flatMap(new Function <Object, ObservableSource<String>>() {
                             @Override
-                            public ObservableSource<String> apply(String s) throws Exception {
+                            public ObservableSource<String> apply(Object o) throws Exception {
                                 Log.d("TAG", "flatMap: threadId:" + Thread.currentThread().getId());
                                 TimeUnit.SECONDS.sleep(5);
-                                return Observable.just(s + "\nshow at:" + Calendar.getInstance().getTime().toString());
+                                return Observable.just("show at:" + Calendar.getInstance().getTime().toString());
                             }
                         })
                         .observeOn(AndroidSchedulers.mainThread())
@@ -70,20 +81,27 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void accept(String s) throws Exception {
                                 Log.d("TAG", "subscribe: threadId:" + Thread.currentThread().getId());
-                                Toast.makeText(MainActivity.this, s, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, s, Toast.LENGTH_LONG).show();
                             }
                         });
             }
         });
 
-        mObservable.observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String s) throws Exception {
-                        mTextView.setText(s);
-                    }
-                });
+//        mObservable.observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(new Consumer<String>() {
+//                    @Override
+//                    public void accept(String s) throws Exception {
+//                        mTextView.setText(s);
+//                    }
+//                });
 
+
+        mClickObservable.subscribe(new Consumer() {
+            @Override
+            public void accept(Object o) throws Exception {
+                mTextView.setText(Calendar.getInstance().getTime().toString());
+            }
+        });
 //        mButton.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View v) {
